@@ -23,7 +23,7 @@ app.get('/users', (req, res) => {
   
   usersRef.get()
     .then(snapshot => {
-      const users = snapshot.docs.map(doc => doc.data());
+      const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       res.json(users);
     })
     .catch(error => {
@@ -50,6 +50,37 @@ app.post('/addUser', (req, res) => {
     .catch(error => {
       console.error("שגיאה בהוספת גיל:", error);
       res.status(500).send("שגיאה בהוספת גיל");
+    });
+});
+
+app.put('/updateAge/:id', (req, res) => {
+  const db = admin.firestore();
+  const { id } = req.params;
+  const { age } = req.body;
+
+  if (typeof age !== 'number' || age <= 0) {
+    return res.status(400).send("הגיל חייב להיות מספר חיובי");
+  }
+
+  db.collection('users').doc(id).update({ age })
+    .then(() => res.send("הגיל עודכן בהצלחה"))
+    .catch(error => {
+      console.error("שגיאה בעדכון גיל:", error);
+      res.status(500).send("שגיאה בעדכון גיל");
+    });
+});
+
+app.delete('/deleteAge/:id', (req, res) => {
+  const db = admin.firestore();
+  const { id } = req.params;
+
+  db.collection('users').doc(id).update({ age: admin.firestore.FieldValue.delete() })
+    .then(() => {
+      res.status(200).send("הגיל נמחק בהצלחה");
+    })
+    .catch(error => {
+      console.error("שגיאה במחיקת הגיל:", error);
+      res.status(500).send("שגיאה במחיקת הגיל");
     });
 });
 
